@@ -1,4 +1,7 @@
 # Smart Cache Layer — ALU BSE Activity
+# Collaboration Task sheet link 
+    https://docs.google.com/spreadsheets/d/1I5U3kADjYwESpTqRP-xVOQJSKqEXTlGXiePz4wH9484/edit?usp=sharing
+    
 
 A guided hands-on activity for the **Advanced Python Programming**.  
 Students add a production-quality cache layer to a Django REST API, level by level.
