@@ -43,7 +43,8 @@ class PostListView(APIView):
         return [AllowAny()]
 
     def get(self, request):
-        cache_key = "posts:list"
+        params = request.query_params.urlencode()
+        cache_key = f"posts:list:{params}" if params else "posts:list"
         data = cache.get(cache_key)
         if data is not None:
             return Response(data)
