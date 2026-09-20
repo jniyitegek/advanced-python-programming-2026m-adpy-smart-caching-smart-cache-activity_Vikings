@@ -43,22 +43,16 @@ class PostListView(APIView):
         return [AllowAny()]
 
     def get(self, request):
-        # ---------------------------------------------------------------
-        # TODO (Level 2): Implement cache-aside for this endpoint.
-        #
-        # Requirements:
-        #   - Cache key: should be shared across ALL users (it's public data)
-        #   - TTL: 300 seconds (5 minutes)
-        #   - On cache miss: query the DB, store in cache, return data
-        #   - On cache hit: return cached data directly
-        #
-        # Hint: use `cache.get(key)` and `cache.set(key, value, timeout)`
-        # ---------------------------------------------------------------
+        cache_key = "posts:list"
+        data = cache.get(cache_key)
+        if data is not None:
+            return Response(data)
 
-        # REMOVE these two lines once you implement the cache below
         posts = Post.objects.filter(status=Post.STATUS_PUBLISHED).select_related("author")
         serializer = PostSerializer(posts, many=True)
-        return Response(serializer.data)
+        data = serializer.data
+        cache.set(cache_key, data, timeout=300)
+        return Response(data)
 
     def post(self, request):
         # ---------------------------------------------------------------
