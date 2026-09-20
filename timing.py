@@ -18,7 +18,8 @@ BASE_URL = "http://127.0.0.1:8000"
 
 ENDPOINTS = [
     ("All Posts (list)", f"{BASE_URL}/api/posts/"),
-    ("Single Post (id=1)", f"{BASE_URL}/api/posts/1/"),
+    # The seed command makes post ID 1 a draft; ID 2 is the first published post.
+    ("Single Post (id=2)", f"{BASE_URL}/api/posts/2/"),
 ]
 
 

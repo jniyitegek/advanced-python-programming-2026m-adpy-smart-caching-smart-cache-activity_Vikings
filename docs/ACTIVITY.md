@@ -75,8 +75,8 @@ python timing.py
 
 | Endpoint | First Request | Average |
 |----------|--------------|---------|
-| All Posts | ___ms | ___ms |
-| Single Post | ___ms | ___ms |
+| All Posts | 46.7ms | 33.4ms |
+| Single Post | 2.7ms | 1.6ms |
 
 You'll run this again after each level to see how much you've improved.
 
@@ -139,7 +139,8 @@ Look at `BrokenDraftsView` at the bottom of `views.py`.
 
 > What is the bug in `BrokenDraftsView`?
 
-_Your answer:_
+_Answer:_ It caches every authenticated user's drafts under the same generic
+key, `"my-drafts"`. The cache response is not tied to the authenticated user.
 
 ---
 
@@ -147,19 +148,30 @@ _Your answer:_
 > 1. Alice logs in and calls `/api/posts/broken-drafts/`
 > 2. Bob logs in and calls `/api/posts/broken-drafts/`
 
-_Your answer:_
+_Answer:_
+
+1. Alice's request passes authentication and misses the initially empty
+   `"my-drafts"` cache key. The view queries Alice's drafts, serializes them,
+   and stores that list under `"my-drafts"` for 120 seconds.
+2. Bob's request also passes authentication, but it hits the same
+   `"my-drafts"` key. The view returns Alice's already-cached data without
+   querying for Bob's drafts.
 
 ---
 
 > What is the real-world impact of this bug if it shipped to production?
 
-_Your answer:_
+_Answer:_ This is a privacy and authorization failure: one customer can read
+another customer's private draft titles and content. In production that can
+expose confidential or unpublished information and cause compliance,
+reputational, and legal harm.
 
 ---
 
 > What is the one-line fix?
 
-_Your answer:_
+_Answer:_ Include the authenticated user's ID in the key, for example:
+`cache_key = f"posts:my-drafts:{request.user.pk}"`.
 
 ---
 
@@ -225,8 +237,8 @@ python timing.py
 
 | Endpoint | Before (Level 1) | After (Level 4) | Improvement |
 |----------|-----------------|-----------------|-------------|
-| All Posts | ___ms | ___ms | ___% faster |
-| Single Post | ___ms | ___ms | ___% faster |
+| All Posts | 71.6ms | 5.9ms | 91.8% faster |
+| Single Post | 2.7ms | 0.9ms | 66.7% faster |
 
 ---
 
@@ -236,10 +248,22 @@ Answer these before the debrief:
 
 1. Why did you use a **shared** key for `/api/posts/` but a **user-specific** key for `/my-drafts/`?
 
+_Answer:_ Published posts are the same public representation for every
+visitor, so a shared key safely maximizes reuse. Drafts are private and vary by
+owner, so their key must include the authenticated user's stable ID.
+
 2. What would happen if you set `timeout=None` on the post list cache?
+
+_Answer:_ The cache entry would not expire automatically. It could serve stale
+data indefinitely unless every relevant create, update, delete, publish, and
+unpublish operation invalidated or replaced it correctly.
 
 3. In what situation would caching `/my-drafts/` actually cause a bug even with the correct user-specific key?
    *(Hint: think about what happens when a user saves a new draft)*
+
+_Answer:_ If a user creates, edits, publishes, or deletes one of their drafts
+without invalidating their `posts:my-drafts:<user-id>` entry, they can receive
+their own stale cached draft list until its 120-second timeout expires.
 
 ---
 
