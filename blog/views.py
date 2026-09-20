@@ -55,17 +55,11 @@ class PostListView(APIView):
         return Response(data)
 
     def post(self, request):
-        # ---------------------------------------------------------------
-        # TODO (Level 4): After saving the new post, invalidate the cache
-        # so the next GET reflects the new data.
-        #
-        # Question: which cache key do you need to delete here?
-        # ---------------------------------------------------------------
-
         serializer = PostSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user)
-            # YOUR CACHE INVALIDATION CODE HERE
+            # A newly published post changes the shared list response.
+            cache.delete("posts:list")
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
